@@ -139,10 +139,12 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
   try {
     const tab = await chrome.tabs.get(activeInfo.tabId);
-    if (!tab.url) return;
+
+    if (!tab || !tab.url) return;
+
     await updateBadge(activeInfo.tabId, tab.url);
-  } catch {
-    // Tab may not exist
+  } catch (err) {
+    console.log("Tab no longer exists:", err);
   }
 });
 
