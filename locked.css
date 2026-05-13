@@ -1,0 +1,322 @@
+/* ─── TabLocker Lock Screen — Black & Red Glassmorphism ─────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #09090B;
+  color: #E4E4E7;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* ─── Background ────────────────────────────────────────────────────────────── */
+.lock-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px;
+  position: relative;
+}
+
+.lock-container::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(220, 38, 38, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(153, 27, 27, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(248, 113, 113, 0.04) 0%, transparent 70%);
+  animation: bgFloat 20s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes bgFloat {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-2%, 1%) rotate(1deg); }
+  50% { transform: translate(1%, -1%) rotate(-0.5deg); }
+  75% { transform: translate(-1%, 2%) rotate(0.5deg); }
+}
+
+/* ─── Lock Card ──────────────────────────────────────────────────────────────── */
+.lock-card {
+  position: relative;
+  background: rgba(14, 14, 16, 0.75);
+  border: 1px solid rgba(220, 38, 38, 0.15);
+  border-radius: 24px;
+  padding: 0 40px 36px;
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+  backdrop-filter: blur(40px);
+  box-shadow:
+    0 0 0 1px rgba(220, 38, 38, 0.08),
+    0 20px 60px rgba(0, 0, 0, 0.6),
+    0 0 120px rgba(220, 38, 38, 0.04);
+  animation: cardAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+@keyframes cardAppear {
+  from { opacity: 0; transform: translateY(30px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ─── Tab Info Bar (Red Background) ──────────────────────────────────────────── */
+.tab-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  margin: 0 -40px 28px;
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.25), rgba(153, 27, 27, 0.2));
+  border-bottom: 1px solid rgba(220, 38, 38, 0.2);
+  backdrop-filter: blur(8px);
+}
+
+.tab-info.hidden { display: none; }
+
+.tab-favicon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  object-fit: contain;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 2px;
+}
+
+.tab-favicon.hidden { display: none; }
+
+.tab-title {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #FCA5A5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  text-align: left;
+}
+
+/* ─── Lock Icon ──────────────────────────────────────────────────────────────── */
+.lock-icon-wrapper { margin-bottom: 28px; }
+
+.lock-icon {
+  width: 80px;
+  height: 80px;
+  filter: drop-shadow(0 4px 20px rgba(220, 38, 38, 0.4));
+  animation: lockPulse 3s ease-in-out infinite;
+}
+
+@keyframes lockPulse {
+  0%, 100% { filter: drop-shadow(0 4px 20px rgba(220, 38, 38, 0.4)); }
+  50% { filter: drop-shadow(0 4px 30px rgba(220, 38, 38, 0.7)); }
+}
+
+.lock-shackle {
+  transform-origin: 32px 28px;
+  animation: shackleJiggle 4s ease-in-out infinite;
+}
+
+@keyframes shackleJiggle {
+  0%, 85%, 100% { transform: rotate(0deg); }
+  88% { transform: rotate(-2deg); }
+  92% { transform: rotate(2deg); }
+  96% { transform: rotate(-1deg); }
+}
+
+/* ─── Typography ─────────────────────────────────────────────────────────────── */
+.lock-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #FAFAFA;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.lock-subtitle {
+  font-size: 0.85rem;
+  color: #71717A;
+  margin-bottom: 32px;
+  word-break: break-all;
+  line-height: 1.5;
+  padding: 0 8px;
+}
+
+/* ─── Form ───────────────────────────────────────────────────────────────────── */
+.unlock-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input {
+  width: 100%;
+  padding: 14px 48px 14px 18px;
+  background: rgba(24, 24, 27, 0.6);
+  border: 1.5px solid rgba(63, 63, 70, 0.4);
+  border-radius: 14px;
+  color: #FAFAFA;
+  font-family: inherit;
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(8px);
+}
+
+.password-input::placeholder { color: #52525B; }
+
+.password-input:focus {
+  border-color: rgba(220, 38, 38, 0.5);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+  background: rgba(24, 24, 27, 0.8);
+}
+
+.password-input.error {
+  border-color: rgba(248, 113, 113, 0.6);
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.12);
+  animation: inputShake 0.4s ease;
+}
+
+@keyframes inputShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.toggle-visibility {
+  position: absolute;
+  right: 14px;
+  background: none;
+  border: none;
+  color: #52525B;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: color 0.2s ease;
+}
+
+.toggle-visibility:hover { color: #F87171; }
+
+/* ─── Error Message ──────────────────────────────────────────────────────────── */
+.error-message {
+  color: #F87171;
+  font-size: 0.82rem;
+  font-weight: 500;
+  min-height: 20px;
+  transition: opacity 0.2s ease;
+}
+.error-message:empty { opacity: 0; }
+
+/* ─── Button ─────────────────────────────────────────────────────────────────── */
+.unlock-button {
+  position: relative;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #DC2626, #991B1B);
+  border: none;
+  border-radius: 14px;
+  color: white;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.25);
+}
+
+.unlock-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.unlock-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 30px rgba(220, 38, 38, 0.4);
+}
+.unlock-button:hover::before { opacity: 1; }
+.unlock-button:active { transform: translateY(0); }
+
+.unlock-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ─── Spinner ────────────────────────────────────────────────────────────────── */
+.spinner {
+  width: 18px; height: 18px;
+  border: 2.5px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+.spinner.hidden { display: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Footer ─────────────────────────────────────────────────────────────────── */
+.lock-footer {
+  margin-top: 24px;
+  font-size: 0.75rem;
+  color: #52525B;
+}
+.lock-footer strong {
+  color: #DC2626;
+  font-weight: 600;
+}
+
+/* ─── Success / Unlock Animation ─────────────────────────────────────────────── */
+.lock-card.unlocking {
+  animation: unlockSuccess 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.lock-card.unlocking .lock-body { fill: #16A34A !important; }
+.lock-card.unlocking .lock-shackle { stroke: #22C55E !important; }
+.lock-card.unlocking .tab-info {
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.25), rgba(21, 128, 61, 0.2)) !important;
+  border-bottom-color: rgba(22, 163, 74, 0.2) !important;
+}
+.lock-card.unlocking .tab-title { color: #86EFAC !important; }
+.lock-card.unlocking .lock-title { color: #86EFAC !important; }
+
+@keyframes unlockSuccess {
+  0% { transform: scale(1); opacity: 1; border-color: rgba(220, 38, 38, 0.15); }
+  30% { transform: scale(1.02); border-color: rgba(22, 163, 74, 0.4); box-shadow: 0 0 60px rgba(22, 163, 74, 0.15); }
+  100% { transform: scale(0.95); opacity: 0; }
+}
+
+/* ─── Body transition for green flash on unlock ──────────────────────────────── */
+body.unlock-success {
+  background: #052e16;
+  transition: background 0.5s ease;
+}
+
+body.unlock-success .lock-container::before {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(22, 163, 74, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(21, 128, 61, 0.1) 0%, transparent 50%);
+}

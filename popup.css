@@ -1,0 +1,370 @@
+/* ─── TabLocker Popup — Black & Red Glassmorphism ──────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #09090B;
+  color: #E4E4E7;
+  width: 340px;
+  min-height: 200px;
+  overflow-x: hidden;
+}
+
+.popup-container { display: flex; flex-direction: column; }
+
+/* ─── Header ─────────────────────────────────────────────────────────────── */
+.popup-header {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid rgba(220, 38, 38, 0.15);
+  background: linear-gradient(180deg, rgba(220, 38, 38, 0.06) 0%, transparent 100%);
+}
+
+.logo-row { display: flex; align-items: center; gap: 10px; }
+
+.logo-icon { filter: drop-shadow(0 2px 8px rgba(220, 38, 38, 0.4)); }
+
+.logo-text {
+  font-size: 1.1rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #F87171, #DC2626);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+}
+
+/* ─── Views ──────────────────────────────────────────────────────────────── */
+.view { animation: viewFadeIn 0.25s ease; }
+.view.hidden { display: none; }
+
+@keyframes viewFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.view-content { padding: 20px; }
+
+.view-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #FAFAFA;
+  margin-bottom: 6px;
+}
+
+.view-desc {
+  font-size: 0.8rem;
+  color: #71717A;
+  margin-bottom: 18px;
+  line-height: 1.4;
+}
+
+/* ─── Fields ─────────────────────────────────────────────────────────────── */
+.field { margin-bottom: 10px; }
+
+.input {
+  width: 100%;
+  padding: 11px 14px;
+  background: rgba(24, 24, 27, 0.7);
+  border: 1.5px solid rgba(63, 63, 70, 0.5);
+  border-radius: 10px;
+  color: #FAFAFA;
+  font-family: inherit;
+  font-size: 0.85rem;
+  outline: none;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+
+.input::placeholder { color: #52525B; }
+
+.input:focus {
+  border-color: rgba(220, 38, 38, 0.5);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+/* ─── Error ──────────────────────────────────────────────────────────────── */
+.error-text {
+  color: #F87171;
+  font-size: 0.78rem;
+  font-weight: 500;
+  min-height: 18px;
+  margin-bottom: 6px;
+}
+.error-text:empty { margin-bottom: 0; }
+
+/* ─── Buttons ────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Lock button — Red */
+.btn-lock {
+  background: linear-gradient(135deg, #DC2626, #991B1B);
+  color: white;
+  box-shadow: 0 2px 12px rgba(220, 38, 38, 0.2);
+}
+.btn-lock:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.35);
+  transform: translateY(-1px);
+}
+
+/* Locked state button — dimmer red */
+.btn-locked {
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.3), rgba(153, 27, 27, 0.3));
+  color: #FCA5A5;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+/* Actively locked — pulsing red glow for emphasis */
+.btn-locked-active {
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.2), rgba(153, 27, 27, 0.15));
+  color: #FCA5A5;
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  box-shadow: 0 0 12px rgba(220, 38, 38, 0.15);
+}
+.btn-locked-active:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.3), rgba(153, 27, 27, 0.25));
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.25);
+}
+
+/* Unlock / Remove Lock button — Green */
+.btn-unlock {
+  background: linear-gradient(135deg, #16A34A, #15803D);
+  color: white;
+  box-shadow: 0 2px 12px rgba(22, 163, 74, 0.2);
+}
+.btn-unlock:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(22, 163, 74, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  background: rgba(39, 39, 42, 0.5);
+  color: #A1A1AA;
+  border: 1px solid rgba(63, 63, 70, 0.4);
+  backdrop-filter: blur(8px);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: rgba(39, 39, 42, 0.8);
+  color: #D4D4D8;
+  border-color: rgba(63, 63, 70, 0.6);
+}
+
+.btn:active:not(:disabled) { transform: translateY(0); }
+
+.btn-icon { font-size: 1rem; }
+.btn-row { display: flex; gap: 8px; }
+.btn-row .btn { flex: 1; }
+
+/* ─── Spinner ────────────────────────────────────────────────────────────── */
+.spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+.spinner.hidden { display: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Current Tab Section ────────────────────────────────────────────────── */
+.section-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.section-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #71717A;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+.status-dot.status-locked {
+  background: #DC2626;
+  box-shadow: 0 0 8px rgba(220, 38, 38, 0.6);
+  animation: pulseDot 2s ease-in-out infinite;
+}
+.status-dot.status-unlocked {
+  background: #16A34A;
+  box-shadow: 0 0 8px rgba(22, 163, 74, 0.6);
+}
+.status-dot.status-open {
+  background: #16A34A;
+  box-shadow: 0 0 8px rgba(22, 163, 74, 0.6);
+}
+.status-dot.status-neutral {
+  background: #52525B;
+  box-shadow: none;
+}
+
+@keyframes pulseDot {
+  0%, 100% { box-shadow: 0 0 8px rgba(220, 38, 38, 0.6); }
+  50% { box-shadow: 0 0 14px rgba(220, 38, 38, 0.9); }
+}
+
+.status-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #A1A1AA;
+  transition: color 0.3s ease;
+}
+.status-label-locked { color: #F87171; }
+.status-label-unlocked { color: #4ADE80; }
+.status-label-open { color: #4ADE80; }
+
+.current-url {
+  font-size: 0.82rem;
+  color: #A1A1AA;
+  margin-bottom: 12px;
+  word-break: break-all;
+  line-height: 1.4;
+  padding: 8px 12px;
+  background: rgba(24, 24, 27, 0.5);
+  border-radius: 8px;
+  border: 1px solid rgba(63, 63, 70, 0.3);
+  backdrop-filter: blur(6px);
+}
+
+.current-tab-section .btn { margin-top: 4px; }
+
+/* ─── Divider ────────────────────────────────────────────────────────────── */
+.divider {
+  height: 1px;
+  background: rgba(63, 63, 70, 0.3);
+  margin: 16px 0;
+}
+
+/* ─── Badge ──────────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px; height: 18px;
+  padding: 0 5px;
+  background: rgba(220, 38, 38, 0.15);
+  color: #F87171;
+  border-radius: 9px;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+/* ─── Locked URLs List ───────────────────────────────────────────────────── */
+.locked-list {
+  max-height: 160px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.locked-list::-webkit-scrollbar { width: 4px; }
+.locked-list::-webkit-scrollbar-track { background: transparent; }
+.locked-list::-webkit-scrollbar-thumb { background: rgba(220, 38, 38, 0.3); border-radius: 2px; }
+
+.locked-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(24, 24, 27, 0.4);
+  border-radius: 8px;
+  border: 1px solid rgba(63, 63, 70, 0.2);
+  transition: all 0.15s ease;
+  backdrop-filter: blur(4px);
+}
+.locked-item:hover {
+  background: rgba(24, 24, 27, 0.7);
+  border-color: rgba(220, 38, 38, 0.15);
+}
+
+.locked-item-icon { font-size: 0.9rem; flex-shrink: 0; }
+
+.locked-item-url {
+  flex: 1;
+  font-size: 0.78rem;
+  color: #A1A1AA;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.locked-item-remove {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: #52525B;
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 0.9rem;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+.locked-item-remove:hover {
+  color: #F87171;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.empty-state {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #52525B;
+  padding: 12px;
+}
+
+/* ─── Toast ──────────────────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  padding: 8px 16px;
+  background: rgba(22, 163, 74, 0.9);
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  z-index: 100;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 20px rgba(22, 163, 74, 0.3);
+}
+.toast.visible { transform: translateX(-50%) translateY(0); }

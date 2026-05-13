@@ -1,16 +1,126 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Tab Locker</title>
-  <style>
-    body { font-family: Arial, sans-serif; width: 200px; padding: 10px; border-radius: 12px;}
-    input { width: 100%; margin-bottom: 10px; }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TabLocker</title>
+  <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <h3>Lock Tab</h3>
-  <input type="password" id="password" placeholder="Enter password">
-  <button id="lockTab">Lock Tab</button>
+  <div class="popup-container">
+
+    <!-- ─── Header ─────────────────────────────────────────────────────────── -->
+    <header class="popup-header">
+      <div class="logo-row">
+        <svg class="logo-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+          <rect x="14" y="28" width="36" height="28" rx="6" fill="url(#lg)"/>
+          <path d="M20 28V20C20 13.373 25.373 8 32 8C38.627 8 44 13.373 44 20V28"
+                stroke="url(#sg)" stroke-width="5" stroke-linecap="round" fill="none"/>
+          <circle cx="32" cy="40" r="4" fill="rgba(255,255,255,0.9)"/>
+          <rect x="30.5" y="42" width="3" height="6" rx="1.5" fill="rgba(255,255,255,0.9)"/>
+          <defs>
+            <linearGradient id="lg" x1="14" y1="28" x2="50" y2="56" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#DC2626"/><stop offset="1" stop-color="#991B1B"/>
+            </linearGradient>
+            <linearGradient id="sg" x1="20" y1="8" x2="44" y2="28" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#F87171"/><stop offset="1" stop-color="#DC2626"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <h1 class="logo-text">TabLocker</h1>
+      </div>
+    </header>
+
+    <!-- ─── Setup View ─────────────────────────────────────────────────────── -->
+    <section id="setupView" class="view hidden">
+      <div class="view-content">
+        <h2 class="view-title">Create Master Password</h2>
+        <p class="view-desc">Set a password to protect your locked tabs.</p>
+
+        <form id="setupForm" autocomplete="off">
+          <div class="field">
+            <input type="password" id="setupPassword" class="input" placeholder="Password (min 4 chars)" autocomplete="new-password">
+          </div>
+          <div class="field">
+            <input type="password" id="setupConfirm" class="input" placeholder="Confirm password" autocomplete="new-password">
+          </div>
+          <p id="setupError" class="error-text"></p>
+          <button type="submit" id="setupButton" class="btn btn-lock">
+            <span id="setupBtnText">Set Password</span>
+            <span id="setupSpinner" class="spinner hidden"></span>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ─── Main View ──────────────────────────────────────────────────────── -->
+    <section id="mainView" class="view hidden">
+      <div class="view-content">
+
+        <!-- Current Tab Section -->
+        <div class="current-tab-section">
+          <div class="section-label-row">
+            <p class="section-label">Current Tab</p>
+            <div class="status-row">
+              <span id="statusIndicator" class="status-dot status-neutral"></span>
+              <span id="statusText" class="status-label"></span>
+            </div>
+          </div>
+          <p class="current-url" id="currentURL">—</p>
+          <button id="toggleLockButton" class="btn btn-lock" disabled>
+            <span id="toggleLockIcon" class="btn-icon">🔒</span>
+            <span id="toggleLockText">Lock This Tab</span>
+          </button>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Locked URLs List -->
+        <div class="locked-list-section">
+          <p class="section-label">Locked URLs <span id="lockedCount" class="badge">0</span></p>
+          <div id="lockedList" class="locked-list">
+            <p class="empty-state" id="emptyState">No locked tabs yet</p>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Actions -->
+        <div class="actions-section">
+          <button id="changePasswordBtn" class="btn btn-ghost">Change Password</button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ─── Change Password View ──────────────────────────────────────────── -->
+    <section id="changePasswordView" class="view hidden">
+      <div class="view-content">
+        <h2 class="view-title">Change Password</h2>
+
+        <form id="changePasswordForm" autocomplete="off">
+          <div class="field">
+            <input type="password" id="currentPasswordInput" class="input" placeholder="Current password" autocomplete="off">
+          </div>
+          <div class="field">
+            <input type="password" id="newPasswordInput" class="input" placeholder="New password (min 4 chars)" autocomplete="new-password">
+          </div>
+          <div class="field">
+            <input type="password" id="confirmNewPasswordInput" class="input" placeholder="Confirm new password" autocomplete="new-password">
+          </div>
+          <p id="changePasswordError" class="error-text"></p>
+          <div class="btn-row">
+            <button type="button" id="cancelChangePassword" class="btn btn-ghost">Cancel</button>
+            <button type="submit" id="changePasswordSubmit" class="btn btn-lock">
+              <span id="changeBtnText">Update</span>
+              <span id="changeSpinner" class="spinner hidden"></span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+  </div>
 
   <script src="popup.js"></script>
 </body>

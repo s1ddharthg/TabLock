@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tab Locked — TabLocker</title>
+  <link rel="stylesheet" href="locked.css">
+</head>
+<body>
+  <div class="lock-container">
+    <div class="lock-card">
+
+      <!-- Tab Info: favicon + title with red background -->
+      <div class="tab-info" id="tabInfo">
+        <img id="tabFavicon" class="tab-favicon" src="" alt="" width="20" height="20">
+        <span id="tabTitle" class="tab-title"></span>
+      </div>
+
+      <!-- Animated Lock Icon -->
+      <div class="lock-icon-wrapper">
+        <svg class="lock-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect class="lock-body" x="14" y="28" width="36" height="28" rx="6" fill="url(#lockGradient)"/>
+          <path class="lock-shackle" d="M20 28V20C20 13.373 25.373 8 32 8C38.627 8 44 13.373 44 20V28"
+                stroke="url(#shackleGradient)" stroke-width="5" stroke-linecap="round" fill="none"/>
+          <circle class="lock-keyhole" cx="32" cy="40" r="4" fill="rgba(255,255,255,0.9)"/>
+          <rect class="lock-keyslot" x="30.5" y="42" width="3" height="6" rx="1.5" fill="rgba(255,255,255,0.9)"/>
+          <defs>
+            <linearGradient id="lockGradient" x1="14" y1="28" x2="50" y2="56" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#DC2626"/>
+              <stop offset="1" stop-color="#991B1B"/>
+            </linearGradient>
+            <linearGradient id="shackleGradient" x1="20" y1="8" x2="44" y2="28" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#F87171"/>
+              <stop offset="1" stop-color="#DC2626"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+
+      <h1 class="lock-title">This Tab is Locked</h1>
+      <p class="lock-subtitle" id="lockedURL"></p>
+
+      <form id="unlockForm" class="unlock-form" autocomplete="off">
+        <div class="input-group">
+          <input
+            type="password"
+            id="passwordInput"
+            class="password-input"
+            placeholder="Enter your password"
+            autocomplete="off"
+            autofocus
+          >
+          <button type="button" id="toggleVisibility" class="toggle-visibility" title="Toggle password visibility">
+            <svg id="eyeIcon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+        <p id="errorMessage" class="error-message"></p>
+        <button type="submit" id="unlockButton" class="unlock-button">
+          <span id="unlockText">Unlock Tab</span>
+          <span id="unlockSpinner" class="spinner hidden"></span>
+        </button>
+      </form>
+
+      <p class="lock-footer">Protected by <strong>TabLocker</strong></p>
+    </div>
+  </div>
+
+  <script src="utils/crypto.js"></script>
+  <script src="locked.js"></script>
+</body>
+</html>
