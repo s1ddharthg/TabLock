@@ -172,9 +172,9 @@
       <div class="card">
         <div class="lock-icon-wrap">
           <svg class="lock-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="14" y="28" width="36" height="28" rx="2" fill="#e4dfda"/>
+            <rect x="14" y="28" width="36" height="28" rx="2" fill="#F87171"/>
             <path d="M20 28V20C20 13.373 25.373 8 32 8C38.627 8 44 13.373 44 20V28"
-                  stroke="#e4dfda" stroke-width="5" stroke-linecap="square" fill="none"/>
+                  stroke="#F87171" stroke-width="5" stroke-linecap="square" fill="none"/>
             <circle cx="32" cy="40" r="4" fill="#12130f"/>
             <rect x="30.5" y="42" width="3" height="6" fill="#12130f"/>
           </svg>
@@ -230,7 +230,7 @@
         font-family: ui-monospace, 'Cascadia Code', 'SF Mono', 'Courier New', monospace;
         color: #e4dfda;
         z-index: 2147483647;
-        animation: fadeIn 0.2s ease;
+        animation: fadeIn 0.2s cubic-bezier(0.23, 1, 0.32, 1);
       }
 
       @keyframes fadeIn {
@@ -278,12 +278,12 @@
         width: 100%;
         max-width: 360px;
         text-align: center;
-        animation: cardIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        animation: cardIn 0.35s cubic-bezier(0.23, 1, 0.32, 1);
       }
 
       @keyframes cardIn {
-        from { opacity: 0; transform: translateY(12px); }
-        to   { opacity: 1; transform: translateY(0); }
+        from { opacity: 0; transform: scale(0.96) translateY(8px); }
+        to   { opacity: 1; transform: scale(1) translateY(0); }
       }
 
       /* ── Lock Icon ─────────────────────────────────────────── */
@@ -364,7 +364,7 @@
       .vis-toggle:hover { color: #e4dfda; }
 
       .error {
-        color: #e4dfda;
+        color: #F87171;
         font-size: 12px;
         font-weight: 400;
         letter-spacing: -0.05em;
@@ -387,7 +387,7 @@
         letter-spacing: -0.05em;
         text-transform: uppercase;
         cursor: pointer;
-        transition: background 0.15s ease, color 0.15s ease;
+        transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -399,6 +399,7 @@
         color: #12130f;
       }
 
+      .unlock-btn:active:not(:disabled) { transform: scale(0.97); }
       .unlock-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
       .spinner {
@@ -425,12 +426,12 @@
       }
 
       .overlay.unlock-success .card {
-        border-color: #e4dfda;
-        animation: cardOut 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        border-color: #4ADE80;
+        animation: cardOut 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
       }
 
       .overlay.unlock-success .tab-info-bar {
-        border-color: #e4dfda;
+        border-color: #4ADE80;
       }
 
       @keyframes cardOut {

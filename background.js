@@ -1,52 +1,43 @@
 /**
  * TabLocker — Background Service Worker
  *
- * Responsibilities:
- * - Manage locked URLs in chrome.storage.local
- * - Send overlay show/hide messages to content scripts
- * - Handle message passing from popup and content scripts
- * - Update badge icons on locked tabs
- *
  * Storage schema:
- *   passwordHash: string (SHA-256 hex)
- *   lockedURLs: string[] (array of normalized URL strings)
- *   sessionUnlocked: string[] (URLs temporarily unlocked this session)
+ *   passwordHash:    string   PBKDF2-SHA256 hex (32 bytes)
+ *   passwordSalt:    string   PBKDF2 salt hex   (16 bytes)
+ *   lockedURLs:      string[] normalized URL strings
+ *   sessionUnlocked: string[] URLs unlocked this session
+ *   failedAttempts:  number   unlock failures since last success
+ *   lockedUntil:     number   epoch ms; 0 = not rate-limited
  */
 
-// Import crypto utilities
 importScripts('utils/crypto.js');
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const BADGE_COLOR_LOCKED = '#DC2626';
+const BADGE_COLOR_LOCKED   = '#DC2626';
 const BADGE_COLOR_UNLOCKED = '#10B981';
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS   = 30_000;
 
-// ─── Initialization ──────────────────────────────────────────────────────────
+// ─── Startup ────────────────────────────────────────────────────────────────
 
-chrome.runtime.onInstalled.addListener(async (details) => {
-  console.log('[TabLocker] Extension installed/updated:', details.reason);
+// Clear session unlocks on SW restart (browser restart / extension reload)
+chrome.storage.local.set({ sessionUnlocked: [] });
 
-  // Only initialize storage on fresh install — never wipe existing data
-  if (details.reason === 'install') {
-    const data = await chrome.storage.local.get(['passwordHash', 'lockedURLs']);
-    if (!data.passwordHash) {
-      await chrome.storage.local.set({ passwordHash: null, lockedURLs: [] });
-      console.log('[TabLocker] Initialized fresh storage');
-    }
+// Migration: detect old unsalted SHA-256 hash and force re-setup
+(async () => {
+  const data = await chrome.storage.local.get(['passwordHash', 'passwordSalt']);
+  if (data.passwordHash && !data.passwordSalt) {
+    // Old SHA-256 hash — wipe credentials so user must re-create password
+    await chrome.storage.local.remove(['passwordHash', 'lockedURLs', 'sessionUnlocked']);
+    console.log('[TabLocker] Migrated: old SHA-256 hash cleared, re-setup required');
   }
-});
+})();
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/**
- * Normalize a URL by stripping query params and hash for consistent matching.
- */
 function normalizeURL(urlString) {
   try {
     const url = new URL(urlString);
-    if (url.protocol === 'chrome:' || url.protocol === 'chrome-extension:') {
-      return null;
-    }
+    if (url.protocol === 'chrome:' || url.protocol === 'chrome-extension:') return null;
     return url.origin + url.pathname;
   } catch {
     return null;
@@ -56,22 +47,19 @@ function normalizeURL(urlString) {
 async function isURLLocked(url) {
   const normalized = normalizeURL(url);
   if (!normalized) return false;
-  const data = await chrome.storage.local.get(['lockedURLs']);
-  return (data.lockedURLs || []).includes(normalized);
+  const { lockedURLs = [] } = await chrome.storage.local.get('lockedURLs');
+  return lockedURLs.includes(normalized);
 }
 
 async function isSessionUnlocked(url) {
   const normalized = normalizeURL(url);
   if (!normalized) return false;
-  const data = await chrome.storage.local.get(['sessionUnlocked']);
-  return (data.sessionUnlocked || []).includes(normalized);
+  const { sessionUnlocked = [] } = await chrome.storage.local.get('sessionUnlocked');
+  return sessionUnlocked.includes(normalized);
 }
 
-/**
- * Update the badge for a specific tab.
- */
 async function updateBadge(tabId, url) {
-  const locked = await isURLLocked(url);
+  const locked   = await isURLLocked(url);
   const unlocked = await isSessionUnlocked(url);
 
   if (locked && !unlocked) {
@@ -85,34 +73,22 @@ async function updateBadge(tabId, url) {
   }
 }
 
-/**
- * Send overlay message to a tab. If content script isn't loaded, inject it first.
- */
 async function sendOverlayAction(tabId, action) {
   try {
     await chrome.tabs.sendMessage(tabId, { action });
   } catch {
-    // Content script not loaded — inject it, which will auto-check lock state
     try {
-      await chrome.scripting.executeScript({
-        target: { tabId },
-        files: ['content.js']
-      });
-      console.log(`[TabLocker] Injected content script into tab ${tabId}`);
+      await chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] });
     } catch (e) {
       console.warn(`[TabLocker] Cannot inject into tab ${tabId}:`, e.message);
     }
   }
 }
 
-/**
- * Notify all open tabs matching a URL to show or remove overlay.
- */
 async function notifyMatchingTabs(normalizedURL, action) {
   const tabs = await chrome.tabs.query({});
   for (const tab of tabs) {
-    const tabNorm = normalizeURL(tab.url);
-    if (tabNorm === normalizedURL) {
+    if (normalizeURL(tab.url) === normalizedURL) {
       await sendOverlayAction(tab.id, action);
       await updateBadge(tab.id, tab.url);
     }
@@ -121,252 +97,187 @@ async function notifyMatchingTabs(normalizedURL, action) {
 
 // ─── Tab Event Listeners ────────────────────────────────────────────────────
 
-/**
- * On tab URL change completion — update badge.
- * Content script handles showing overlay on its own init.
- */
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (changeInfo.status !== 'complete') return;
-  if (!tab.url) return;
-  const normalized = normalizeURL(tab.url);
-  if (!normalized) return;
+  if (changeInfo.status !== 'complete' || !tab.url) return;
+  if (!normalizeURL(tab.url)) return;
   await updateBadge(tabId, tab.url);
 });
 
-/**
- * On tab activation — update badge.
- */
-chrome.tabs.onActivated.addListener(async (activeInfo) => {
+chrome.tabs.onActivated.addListener(async ({ tabId }) => {
   try {
-    const tab = await chrome.tabs.get(activeInfo.tabId);
-
-    if (!tab || !tab.url) return;
-
-    await updateBadge(activeInfo.tabId, tab.url);
-  } catch (err) {
-    console.log("Tab no longer exists:", err);
-  }
+    const tab = await chrome.tabs.get(tabId);
+    if (tab?.url) await updateBadge(tabId, tab.url);
+  } catch { /* tab closed */ }
 });
 
-// ─── Message Handlers ───────────────────────────────────────────────────────
+// ─── Message Router ─────────────────────────────────────────────────────────
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   handleMessage(message, sender)
     .then(sendResponse)
-    .catch(err => {
-      console.error('[TabLocker] Message handler error:', err);
-      sendResponse({ success: false, error: err.message });
-    });
-  return true; // Required for async sendResponse
+    .catch(err => sendResponse({ success: false, error: err.message }));
+  return true;
 });
 
 async function handleMessage(message, sender) {
-  console.log('[TabLocker] Received message:', message.type);
-
   switch (message.type) {
-    case 'checkLock':
-      return await handleCheckLock(message, sender);
-    case 'setupPassword':
-      return await handleSetupPassword(message);
-    case 'verifyPassword':
-      return await handleVerifyPassword(message);
-    case 'changePassword':
-      return await handleChangePassword(message);
-    case 'lockURL':
-      return await handleLockURL(message);
-    case 'unlockURL':
-      return await handleUnlockURL(message);
-    case 'unlockTab':
-      return await handleUnlockTab(message, sender);
-    case 'getState':
-      return await handleGetState(message);
-    case 'removeLockedURL':
-      return await handleRemoveLockedURL(message);
-    default:
-      return { success: false, error: `Unknown message type: ${message.type}` };
+    case 'checkLock':        return handleCheckLock(message, sender);
+    case 'setupPassword':    return handleSetupPassword(message);
+    case 'verifyPassword':   return handleVerifyPassword(message);
+    case 'changePassword':   return handleChangePassword(message);
+    case 'lockURL':          return handleLockURL(message);
+    case 'unlockURL':        return handleUnlockURL(message);
+    case 'unlockTab':        return handleUnlockTab(message, sender);
+    case 'getState':         return handleGetState(message);
+    case 'removeLockedURL':  return handleRemoveLockedURL(message);
+    default: return { success: false, error: `Unknown type: ${message.type}` };
   }
 }
 
-/**
- * Check if the sender tab's URL is locked (used by content script on init).
- */
+// ─── Handlers ───────────────────────────────────────────────────────────────
+
 async function handleCheckLock(message, sender) {
-  if (!sender.tab || !sender.tab.url) {
-    return { locked: false };
-  }
-  const url = sender.tab.url;
-  const locked = await isURLLocked(url);
-  const sessionUnlocked = await isSessionUnlocked(url);
-  return { locked: locked && !sessionUnlocked };
+  if (!sender.tab?.url) return { locked: false };
+  const locked   = await isURLLocked(sender.tab.url);
+  const unlocked = await isSessionUnlocked(sender.tab.url);
+  return { locked: locked && !unlocked };
 }
 
 async function handleSetupPassword({ password }) {
-  if (!password || password.length < 4) {
+  if (!password || password.length < 4)
     return { success: false, error: 'Password must be at least 4 characters' };
-  }
-  const hash = await CryptoUtils.hashPassword(password);
-  await chrome.storage.local.set({ passwordHash: hash });
-  console.log('[TabLocker] Master password set');
+
+  const { hash, salt } = await CryptoUtils.hashPassword(password);
+  await chrome.storage.local.set({ passwordHash: hash, passwordSalt: salt });
   return { success: true };
 }
 
 async function handleVerifyPassword({ password }) {
-  const data = await chrome.storage.local.get(['passwordHash']);
-  if (!data.passwordHash) {
+  const data = await chrome.storage.local.get(['passwordHash', 'passwordSalt']);
+  if (!data.passwordHash || !data.passwordSalt)
     return { success: false, error: 'No password set' };
-  }
-  const valid = await CryptoUtils.verifyPassword(password, data.passwordHash);
+
+  const valid = await CryptoUtils.verifyPassword(password, data.passwordHash, data.passwordSalt);
   return { success: valid, error: valid ? null : 'Incorrect password' };
 }
 
 async function handleChangePassword({ currentPassword, newPassword }) {
-  const data = await chrome.storage.local.get(['passwordHash']);
-  if (!data.passwordHash) {
+  const data = await chrome.storage.local.get(['passwordHash', 'passwordSalt']);
+  if (!data.passwordHash || !data.passwordSalt)
     return { success: false, error: 'No password set' };
-  }
-  const valid = await CryptoUtils.verifyPassword(currentPassword, data.passwordHash);
-  if (!valid) {
-    return { success: false, error: 'Current password is incorrect' };
-  }
-  if (!newPassword || newPassword.length < 4) {
+
+  const valid = await CryptoUtils.verifyPassword(currentPassword, data.passwordHash, data.passwordSalt);
+  if (!valid) return { success: false, error: 'Current password is incorrect' };
+  if (!newPassword || newPassword.length < 4)
     return { success: false, error: 'New password must be at least 4 characters' };
-  }
-  const newHash = await CryptoUtils.hashPassword(newPassword);
-  await chrome.storage.local.set({ passwordHash: newHash });
-  console.log('[TabLocker] Master password changed');
+
+  const { hash, salt } = await CryptoUtils.hashPassword(newPassword);
+  await chrome.storage.local.set({ passwordHash: hash, passwordSalt: salt });
   return { success: true };
 }
 
-/**
- * Lock a URL — adds to lockedURLs and shows overlay on matching tabs.
- */
 async function handleLockURL({ url }) {
   const normalized = normalizeURL(url);
-  if (!normalized) {
-    return { success: false, error: 'Invalid URL' };
-  }
+  if (!normalized) return { success: false, error: 'Invalid URL' };
 
-  const data = await chrome.storage.local.get(['lockedURLs']);
-  const lockedURLs = data.lockedURLs || [];
-  if (lockedURLs.includes(normalized)) {
-    return { success: false, error: 'URL is already locked' };
-  }
+  const { lockedURLs = [] } = await chrome.storage.local.get('lockedURLs');
+  if (lockedURLs.includes(normalized)) return { success: false, error: 'Already locked' };
 
   lockedURLs.push(normalized);
   await chrome.storage.local.set({ lockedURLs });
 
-  // Remove from session unlocked
-  const sessionData = await chrome.storage.local.get(['sessionUnlocked']);
-  const sessionUnlocked = (sessionData.sessionUnlocked || []).filter(u => u !== normalized);
-  await chrome.storage.local.set({ sessionUnlocked });
+  const { sessionUnlocked = [] } = await chrome.storage.local.get('sessionUnlocked');
+  await chrome.storage.local.set({ sessionUnlocked: sessionUnlocked.filter(u => u !== normalized) });
 
-  console.log(`[TabLocker] Locked URL: ${normalized}`);
-
-  // Show overlay on all matching tabs
   await notifyMatchingTabs(normalized, 'showOverlay');
-
   return { success: true, url: normalized };
 }
 
-/**
- * Remove a URL from the locked list and remove overlay from matching tabs.
- */
 async function handleRemoveLockedURL({ url }) {
   const normalized = normalizeURL(url);
-  if (!normalized) {
-    return { success: false, error: 'Invalid URL' };
-  }
+  if (!normalized) return { success: false, error: 'Invalid URL' };
 
-  const data = await chrome.storage.local.get(['lockedURLs']);
-  const lockedURLs = (data.lockedURLs || []).filter(u => u !== normalized);
-  await chrome.storage.local.set({ lockedURLs });
+  const { lockedURLs = [] } = await chrome.storage.local.get('lockedURLs');
+  await chrome.storage.local.set({ lockedURLs: lockedURLs.filter(u => u !== normalized) });
 
-  const sessionData = await chrome.storage.local.get(['sessionUnlocked']);
-  const sessionUnlocked = (sessionData.sessionUnlocked || []).filter(u => u !== normalized);
-  await chrome.storage.local.set({ sessionUnlocked });
+  const { sessionUnlocked = [] } = await chrome.storage.local.get('sessionUnlocked');
+  await chrome.storage.local.set({ sessionUnlocked: sessionUnlocked.filter(u => u !== normalized) });
 
-  console.log(`[TabLocker] Removed lock for URL: ${normalized}`);
-
-  // Remove overlay from all matching tabs
   await notifyMatchingTabs(normalized, 'removeOverlay');
-
   return { success: true };
 }
 
-/**
- * Session-unlock a tab — verify password, add to sessionUnlocked,
- * and tell the content script to remove overlay. NO page reload.
- */
 async function handleUnlockTab({ password, url }, sender) {
-  const data = await chrome.storage.local.get(['passwordHash']);
-  if (!data.passwordHash) {
+  const data = await chrome.storage.local.get([
+    'passwordHash', 'passwordSalt', 'failedAttempts', 'lockedUntil'
+  ]);
+
+  if (!data.passwordHash || !data.passwordSalt)
     return { success: false, error: 'No password configured' };
+
+  // Rate limiting check
+  const now = Date.now();
+  const lockedUntil = data.lockedUntil || 0;
+  if (now < lockedUntil) {
+    const secsLeft = Math.ceil((lockedUntil - now) / 1000);
+    return { success: false, error: `Too many attempts. Try again in ${secsLeft}s` };
   }
 
-  const valid = await CryptoUtils.verifyPassword(password, data.passwordHash);
+  const valid = await CryptoUtils.verifyPassword(password, data.passwordHash, data.passwordSalt);
+
   if (!valid) {
-    console.log('[TabLocker] Failed unlock attempt for:', url);
+    const attempts = (data.failedAttempts || 0) + 1;
+    const update = { failedAttempts: attempts };
+    if (attempts >= MAX_ATTEMPTS) {
+      update.lockedUntil = now + LOCKOUT_MS;
+      update.failedAttempts = 0;
+    }
+    await chrome.storage.local.set(update);
     return { success: false, error: 'Incorrect password' };
   }
 
-  // Determine the URL to session-unlock
-  const targetURL = url || (sender.tab && sender.tab.url);
+  // Success — reset rate limit
+  await chrome.storage.local.set({ failedAttempts: 0, lockedUntil: 0 });
+
+  const targetURL = url || sender.tab?.url;
   const normalized = normalizeURL(targetURL);
   if (normalized) {
-    const sessionData = await chrome.storage.local.get(['sessionUnlocked']);
-    const sessionUnlocked = sessionData.sessionUnlocked || [];
+    const { sessionUnlocked = [] } = await chrome.storage.local.get('sessionUnlocked');
     if (!sessionUnlocked.includes(normalized)) {
-      sessionUnlocked.push(normalized);
-      await chrome.storage.local.set({ sessionUnlocked });
+      await chrome.storage.local.set({ sessionUnlocked: [...sessionUnlocked, normalized] });
     }
-
-    // Update badges on matching tabs
     const tabs = await chrome.tabs.query({});
     for (const tab of tabs) {
-      if (normalizeURL(tab.url) === normalized) {
-        await updateBadge(tab.id, tab.url);
-      }
+      if (normalizeURL(tab.url) === normalized) await updateBadge(tab.id, tab.url);
     }
   }
 
-  console.log(`[TabLocker] Session-unlocked: ${targetURL}`);
-  // Content script removes the overlay itself based on this response
   return { success: true };
 }
 
 async function handleUnlockURL({ url }) {
-  return await handleRemoveLockedURL({ url });
+  return handleRemoveLockedURL({ url });
 }
 
-/**
- * Get state for popup.
- */
 async function handleGetState({ url }) {
   const data = await chrome.storage.local.get(['passwordHash', 'lockedURLs', 'sessionUnlocked']);
-  const hasPassword = !!data.passwordHash;
-  const lockedURLs = data.lockedURLs || [];
+  const lockedURLs      = data.lockedURLs || [];
   const sessionUnlocked = data.sessionUnlocked || [];
 
-  let currentURLLocked = false;
+  let currentURLLocked          = false;
   let currentURLSessionUnlocked = false;
   if (url) {
     const normalized = normalizeURL(url);
-    currentURLLocked = normalized ? lockedURLs.includes(normalized) : false;
+    currentURLLocked          = normalized ? lockedURLs.includes(normalized) : false;
     currentURLSessionUnlocked = normalized ? sessionUnlocked.includes(normalized) : false;
   }
 
   return {
     success: true,
-    hasPassword,
+    hasPassword: !!data.passwordHash,
     lockedURLs,
     sessionUnlocked,
     currentURLLocked,
     currentURLSessionUnlocked
   };
 }
-
-// ─── Startup ────────────────────────────────────────────────────────────────
-
-// Clear session unlocks on service worker start (browser restart)
-chrome.storage.local.set({ sessionUnlocked: [] });
-console.log('[TabLocker] Service worker started — session unlocks cleared');

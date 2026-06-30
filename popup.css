@@ -32,12 +32,12 @@ body {
 }
 
 /* ─── Views ──────────────────────────────────────────────────────────────── */
-.view { animation: viewFadeIn 0.2s ease; }
+.view { animation: viewFadeIn 0.25s cubic-bezier(0.23, 1, 0.32, 1); }
 .view.hidden { display: none; }
 
 @keyframes viewFadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: scale(0.97) translateY(4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -111,7 +111,7 @@ body {
   border: 1px solid #e4dfda;
   background: transparent;
   color: #e4dfda;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease, border-color 0.15s ease;
   width: 100%;
 }
 
@@ -126,15 +126,15 @@ body {
   color: #12130f;
 }
 
-/* Actively locked — inverted to signal "protection is on" */
+/* Actively locked — red to signal "protected / danger to remove" */
 .btn-locked-active {
-  background: #e4dfda;
-  color: #12130f;
-  border-color: #e4dfda;
+  background: transparent;
+  color: #F87171;
+  border-color: #F87171;
 }
 .btn-locked-active:hover:not(:disabled) {
-  background: transparent;
-  color: #e4dfda;
+  background: #F87171;
+  color: #12130f;
 }
 
 /* Unlock — same as lock */
@@ -155,7 +155,7 @@ body {
   border-color: #e4dfda;
 }
 
-.btn:active:not(:disabled) { opacity: 0.7; }
+.btn:active:not(:disabled) { transform: scale(0.97); }
 
 .btn-icon { font-size: 12px; }
 .btn-row { display: flex; gap: 8px; }
@@ -197,8 +197,16 @@ body {
   gap: 4px;
 }
 
-/* Status dot hidden — label text carries the meaning */
-.status-dot { display: none; }
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #3c3c38;
+  flex-shrink: 0;
+}
+.status-dot.status-locked   { background: #F87171; }
+.status-dot.status-unlocked,
+.status-dot.status-open     { background: #4ADE80; }
+.status-dot.status-neutral  { background: #3c3c38; }
 
 .status-label {
   font-size: 12px;
@@ -207,6 +215,9 @@ body {
   letter-spacing: -0.05em;
   color: #e4dfda;
 }
+.status-label.status-label-locked   { color: #F87171; }
+.status-label.status-label-unlocked,
+.status-label.status-label-open     { color: #4ADE80; }
 
 .current-url {
   font-size: 12px;

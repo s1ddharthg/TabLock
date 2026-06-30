@@ -2,6 +2,7 @@
   "manifest_version": 3,
   "name": "TabLocker",
   "version": "2.1",
+  "minimum_chrome_version": "88",
   "description": "Lock specific browser tabs with a master password. Locked tabs persist across restarts.",
   "permissions": [
     "tabs",
