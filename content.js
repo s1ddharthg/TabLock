@@ -49,11 +49,9 @@
     if (isOverlayShowing) return;
     isOverlayShowing = true;
 
-    // Save and modify title
     originalTitle = document.title;
     document.title = '🔒 ' + originalTitle;
 
-    // Create host element
     overlayHost = document.createElement('div');
     overlayHost.id = 'tablocker-overlay-host';
     overlayHost.style.cssText =
@@ -63,18 +61,20 @@
 
     const shadow = overlayHost.attachShadow({ mode: 'closed' });
 
-    // Inject styles
     const style = document.createElement('style');
     style.textContent = getOverlayCSS();
     shadow.appendChild(style);
 
-    // Build overlay UI
     const container = document.createElement('div');
     container.className = 'overlay';
     container.innerHTML = buildOverlayHTML();
     shadow.appendChild(container);
 
     document.documentElement.appendChild(overlayHost);
+
+    // Wire favicon error handler via DOM property — not inline attribute
+    const faviconImg = shadow.querySelector('.tab-favicon');
+    if (faviconImg) faviconImg.onerror = () => { faviconImg.style.display = 'none'; };
 
     // Wire up event handlers (must be done after DOM insertion)
     const form = shadow.querySelector('#tl-form');
@@ -117,7 +117,6 @@
         });
 
         if (response && response.success) {
-          // Success — green flash then remove
           container.classList.add('unlock-success');
           setTimeout(() => removeOverlay(), 600);
         } else {
@@ -148,7 +147,6 @@
     overlayHost = null;
     isOverlayShowing = false;
 
-    // Restore original title
     if (originalTitle) {
       document.title = originalTitle;
       originalTitle = '';
@@ -167,39 +165,30 @@
 
     return `
       <div class="tab-info-bar">
-        <img class="tab-favicon" src="${faviconURL}" alt="" width="18" height="18"
-             onerror="this.style.display='none'">
+        <img class="tab-favicon" src="${faviconURL}" alt="" width="14" height="14">
         <span class="tab-title">${escapeHTML(pageTitle)}</span>
       </div>
 
       <div class="card">
         <div class="lock-icon-wrap">
           <svg class="lock-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="14" y="28" width="36" height="28" rx="6" fill="url(#tl-lg)"/>
+            <rect x="14" y="28" width="36" height="28" rx="2" fill="#e4dfda"/>
             <path d="M20 28V20C20 13.373 25.373 8 32 8C38.627 8 44 13.373 44 20V28"
-                  stroke="url(#tl-sg)" stroke-width="5" stroke-linecap="round" fill="none"/>
-            <circle cx="32" cy="40" r="4" fill="rgba(255,255,255,0.9)"/>
-            <rect x="30.5" y="42" width="3" height="6" rx="1.5" fill="rgba(255,255,255,0.9)"/>
-            <defs>
-              <linearGradient id="tl-lg" x1="14" y1="28" x2="50" y2="56" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#DC2626"/><stop offset="1" stop-color="#991B1B"/>
-              </linearGradient>
-              <linearGradient id="tl-sg" x1="20" y1="8" x2="44" y2="28" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#F87171"/><stop offset="1" stop-color="#DC2626"/>
-              </linearGradient>
-            </defs>
+                  stroke="#e4dfda" stroke-width="5" stroke-linecap="square" fill="none"/>
+            <circle cx="32" cy="40" r="4" fill="#12130f"/>
+            <rect x="30.5" y="42" width="3" height="6" fill="#12130f"/>
           </svg>
         </div>
 
-        <h1 class="title">This Tab is Locked</h1>
+        <p class="kicker">TAB LOCKED</p>
         <p class="subtitle">${escapeHTML(hostname)}</p>
 
         <form id="tl-form" autocomplete="off">
           <div class="input-group">
             <input type="password" id="tl-password" class="pwd-input"
-                   placeholder="Enter your password" autocomplete="off">
+                   placeholder="Password" autocomplete="off">
             <button type="button" id="tl-toggle-vis" class="vis-toggle" title="Show password">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
                    stroke="currentColor" stroke-width="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                 <circle cx="12" cy="12" r="3"/>
@@ -213,7 +202,7 @@
           </button>
         </form>
 
-        <p class="footer">Protected by <strong>TabLocker</strong></p>
+        <p class="footer">TABLOCKER</p>
       </div>
     `;
   }
@@ -228,8 +217,6 @@
 
   function getOverlayCSS() {
     return `
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
       :host { all: initial; }
 
       .overlay {
@@ -239,163 +226,185 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: rgba(2, 2, 3, 0.92);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        color: #E4E4E7;
+        background: #12130f;
+        font-family: ui-monospace, 'Cascadia Code', 'SF Mono', 'Courier New', monospace;
+        color: #e4dfda;
         z-index: 2147483647;
-        animation: fadeIn 0.3s ease;
+        animation: fadeIn 0.2s ease;
       }
 
       @keyframes fadeIn {
         from { opacity: 0; }
-        to { opacity: 1; }
+        to   { opacity: 1; }
       }
 
-      /* ── Tab Info Bar (red) ──────────────────────────────────── */
+      @media (prefers-reduced-motion: reduce) {
+        .overlay, .card, .lock-svg { animation: none; }
+      }
+
+      /* ── Tab Info Bar ─────────────────────────────────────── */
       .tab-info-bar {
         position: absolute;
         top: 0; left: 0; right: 0;
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 12px 24px;
-        background: linear-gradient(135deg, rgba(220,38,38,0.3), rgba(153,27,27,0.25));
-        border-bottom: 1px solid rgba(220,38,38,0.25);
-        backdrop-filter: blur(12px);
+        gap: 8px;
+        padding: 10px 16px;
+        border-bottom: 1px solid #3c3c38;
       }
 
       .tab-favicon {
-        width: 18px; height: 18px;
-        border-radius: 3px;
+        width: 14px; height: 14px;
         flex-shrink: 0;
         object-fit: contain;
       }
 
       .tab-title {
-        font-size: 0.82rem;
-        font-weight: 500;
-        color: #FCA5A5;
+        font-size: 12px;
+        color: #3c3c38;
+        letter-spacing: -0.05em;
+        text-transform: uppercase;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
 
-      /* ── Card ────────────────────────────────────────────────── */
+      /* ── Card ─────────────────────────────────────────────── */
       .card {
-        background: rgba(14, 14, 16, 0.75);
-        border: 1px solid rgba(220,38,38,0.15);
-        border-radius: 24px;
-        padding: 48px 40px 36px;
+        background: #12130f;
+        border: 1px solid #3c3c38;
+        border-radius: 0;
+        padding: 36px 32px 28px;
         width: 100%;
-        max-width: 400px;
+        max-width: 360px;
         text-align: center;
-        backdrop-filter: blur(40px);
-        box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 100px rgba(220,38,38,0.04);
-        animation: cardIn 0.5s cubic-bezier(0.16,1,0.3,1);
+        animation: cardIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       }
 
       @keyframes cardIn {
-        from { opacity: 0; transform: translateY(24px) scale(0.96); }
-        to { opacity: 1; transform: translateY(0) scale(1); }
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0); }
       }
 
-      /* ── Lock Icon ──────────────────────────────────────────── */
-      .lock-icon-wrap { margin-bottom: 24px; }
+      /* ── Lock Icon ─────────────────────────────────────────── */
+      .lock-icon-wrap { margin-bottom: 20px; }
 
       .lock-svg {
-        width: 72px; height: 72px;
-        filter: drop-shadow(0 4px 20px rgba(220,38,38,0.4));
-        animation: pulse 3s ease-in-out infinite;
+        width: 48px; height: 48px;
+        animation: breathe 4s ease-in-out infinite;
       }
 
-      @keyframes pulse {
-        0%,100% { filter: drop-shadow(0 4px 20px rgba(220,38,38,0.4)); }
-        50%     { filter: drop-shadow(0 4px 30px rgba(220,38,38,0.7)); }
+      @keyframes breathe {
+        0%, 100% { opacity: 1; }
+        50%       { opacity: 0.55; }
       }
 
-      /* ── Typography ─────────────────────────────────────────── */
-      .title {
-        font-size: 1.4rem; font-weight: 700; color: #FAFAFA;
-        margin: 0 0 6px; letter-spacing: -0.02em;
+      /* ── Typography ────────────────────────────────────────── */
+      .kicker {
+        font-size: 12px;
+        font-weight: 400;
+        color: #e4dfda;
+        letter-spacing: -0.05em;
+        text-transform: uppercase;
+        margin: 0 0 4px;
+        line-height: 1.25;
       }
 
       .subtitle {
-        font-size: 0.85rem; color: #71717A; margin: 0 0 28px;
+        font-size: 12px;
+        color: #3c3c38;
+        letter-spacing: -0.05em;
+        margin: 0 0 24px;
         word-break: break-all;
+        line-height: 1.25;
       }
 
-      /* ── Form ───────────────────────────────────────────────── */
-      form { display: flex; flex-direction: column; gap: 14px; }
+      /* ── Form ──────────────────────────────────────────────── */
+      form { display: flex; flex-direction: column; gap: 8px; }
 
       .input-group { position: relative; display: flex; align-items: center; }
 
       .pwd-input {
-        width: 100%; padding: 13px 44px 13px 16px;
-        background: rgba(24,24,27,0.6);
-        border: 1.5px solid rgba(63,63,70,0.4);
-        border-radius: 12px;
-        color: #FAFAFA; font-family: inherit; font-size: 0.9rem;
-        outline: none; transition: all 0.2s ease;
+        width: 100%;
+        padding: 8px 32px 8px 10px;
+        background: transparent;
+        border: 1px solid #3c3c38;
+        border-radius: 2px;
+        color: #e4dfda;
+        font-family: inherit;
+        font-size: 12px;
+        letter-spacing: -0.05em;
+        outline: none;
+        transition: border-color 0.15s ease;
         box-sizing: border-box;
       }
 
-      .pwd-input::placeholder { color: #52525B; }
-
-      .pwd-input:focus {
-        border-color: rgba(220,38,38,0.5);
-        box-shadow: 0 0 0 3px rgba(220,38,38,0.12);
-      }
+      .pwd-input::placeholder { color: #3c3c38; letter-spacing: -0.05em; }
+      .pwd-input:focus { border-color: #e4dfda; }
 
       .pwd-input.shake {
         animation: shake 0.4s ease;
-        border-color: rgba(248,113,113,0.6);
+        border-color: #e4dfda;
       }
 
       @keyframes shake {
-        0%,100% { transform: translateX(0); }
-        20% { transform: translateX(-6px); }
-        40% { transform: translateX(6px); }
-        60% { transform: translateX(-4px); }
-        80% { transform: translateX(4px); }
+        0%, 100% { transform: translateX(0); }
+        20%       { transform: translateX(-5px); }
+        40%       { transform: translateX(5px); }
+        60%       { transform: translateX(-3px); }
+        80%       { transform: translateX(3px); }
       }
 
       .vis-toggle {
-        position: absolute; right: 12px;
-        background: none; border: none; color: #52525B;
+        position: absolute; right: 8px;
+        background: none; border: none; color: #3c3c38;
         cursor: pointer; padding: 4px; display: flex;
-        border-radius: 4px; transition: color 0.2s;
+        border-radius: 0; transition: color 0.15s;
       }
-      .vis-toggle:hover { color: #F87171; }
+      .vis-toggle:hover { color: #e4dfda; }
 
       .error {
-        color: #F87171; font-size: 0.8rem; font-weight: 500;
-        min-height: 18px; margin: 0; text-align: left;
+        color: #e4dfda;
+        font-size: 12px;
+        font-weight: 400;
+        letter-spacing: -0.05em;
+        min-height: 16px;
+        margin: 0;
+        text-align: left;
+        line-height: 1.25;
       }
 
-      /* ── Button ──────────────────────────────────────────────── */
+      /* ── Button ────────────────────────────────────────────── */
       .unlock-btn {
-        padding: 13px 24px;
-        background: linear-gradient(135deg, #DC2626, #991B1B);
-        border: none; border-radius: 12px;
-        color: white; font-family: inherit; font-size: 0.9rem; font-weight: 600;
-        cursor: pointer; transition: all 0.2s ease;
-        display: flex; align-items: center; justify-content: center; gap: 8px;
-        box-shadow: 0 4px 20px rgba(220,38,38,0.25);
+        padding: 8px 16px;
+        background: transparent;
+        border: 1px solid #e4dfda;
+        border-radius: 9999px;
+        color: #e4dfda;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 400;
+        letter-spacing: -0.05em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
       }
 
       .unlock-btn:hover:not(:disabled) {
-        transform: translateY(-1px);
-        box-shadow: 0 8px 30px rgba(220,38,38,0.4);
+        background: #e4dfda;
+        color: #12130f;
       }
 
-      .unlock-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+      .unlock-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
       .spinner {
-        width: 16px; height: 16px;
-        border: 2px solid rgba(255,255,255,0.3);
-        border-top-color: white;
+        width: 10px; height: 10px;
+        border: 1px solid rgba(228,223,218,0.3);
+        border-top-color: #e4dfda;
         border-radius: 50%;
         animation: spin 0.6s linear infinite;
       }
@@ -403,33 +412,30 @@
       @keyframes spin { to { transform: rotate(360deg); } }
 
       .footer {
-        margin: 24px 0 0; font-size: 0.72rem; color: #52525B;
+        margin: 20px 0 0;
+        font-size: 12px;
+        color: #3c3c38;
+        letter-spacing: -0.05em;
+        text-transform: uppercase;
       }
-      .footer strong { color: #DC2626; font-weight: 600; }
 
-      /* ── Unlock Success ─────────────────────────────────────── */
+      /* ── Unlock Success ────────────────────────────────────── */
       .overlay.unlock-success {
-        background: rgba(2, 32, 10, 0.95);
-        transition: background 0.4s ease;
+        background: #12130f;
       }
 
       .overlay.unlock-success .card {
-        border-color: rgba(22,163,74,0.3);
-        box-shadow: 0 0 80px rgba(22,163,74,0.1);
-        animation: cardOut 0.6s cubic-bezier(0.16,1,0.3,1) forwards;
+        border-color: #e4dfda;
+        animation: cardOut 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
 
-      .overlay.unlock-success .title { color: #86EFAC; }
       .overlay.unlock-success .tab-info-bar {
-        background: linear-gradient(135deg, rgba(22,163,74,0.3), rgba(21,128,61,0.25));
-        border-color: rgba(22,163,74,0.25);
+        border-color: #e4dfda;
       }
-      .overlay.unlock-success .tab-title { color: #86EFAC; }
 
       @keyframes cardOut {
-        0% { transform: scale(1); opacity: 1; }
-        40% { transform: scale(1.02); }
-        100% { transform: scale(0.95); opacity: 0; }
+        0%   { opacity: 1; transform: scale(1); }
+        100% { opacity: 0; transform: scale(0.97) translateY(-6px); }
       }
     `;
   }
