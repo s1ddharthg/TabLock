@@ -9,6 +9,11 @@
 (function () {
   'use strict';
 
+  // Guard against double-injection (manifest auto-inject + executeScript).
+  // All state lives in the first scope; subsequent injections are no-ops.
+  if (window.__tlLoaded) return;
+  window.__tlLoaded = true;
+
   let overlayHost = null;
   let originalTitle = '';
   let isOverlayShowing = false;
@@ -261,7 +266,7 @@
 
       .tab-title {
         font-size: 12px;
-        color: #3c3c38;
+        color: #9a9892;
         letter-spacing: -0.05em;
         text-transform: uppercase;
         overflow: hidden;
@@ -312,7 +317,7 @@
 
       .subtitle {
         font-size: 12px;
-        color: #3c3c38;
+        color: #9a9892;
         letter-spacing: -0.05em;
         margin: 0 0 24px;
         word-break: break-all;
@@ -339,7 +344,7 @@
         box-sizing: border-box;
       }
 
-      .pwd-input::placeholder { color: #3c3c38; letter-spacing: -0.05em; }
+      .pwd-input::placeholder { color: #6e6c66; letter-spacing: -0.05em; }
       .pwd-input:focus { border-color: #e4dfda; }
 
       .pwd-input.shake {
@@ -357,7 +362,7 @@
 
       .vis-toggle {
         position: absolute; right: 8px;
-        background: none; border: none; color: #3c3c38;
+        background: none; border: none; color: #9a9892;
         cursor: pointer; padding: 4px; display: flex;
         border-radius: 0; transition: color 0.15s;
       }
@@ -415,7 +420,7 @@
       .footer {
         margin: 20px 0 0;
         font-size: 12px;
-        color: #3c3c38;
+        color: #9a9892;
         letter-spacing: -0.05em;
         text-transform: uppercase;
       }

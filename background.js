@@ -77,8 +77,12 @@ async function sendOverlayAction(tabId, action) {
   try {
     await chrome.tabs.sendMessage(tabId, { action });
   } catch {
+    // Content script not loaded — inject it, then send the action explicitly.
+    // We can't rely on init() alone because it's async and may race.
     try {
       await chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] });
+      // Guard in content.js prevents double-overlay if script was already injected.
+      await chrome.tabs.sendMessage(tabId, { action }).catch(() => {});
     } catch (e) {
       console.warn(`[TabLocker] Cannot inject into tab ${tabId}:`, e.message);
     }

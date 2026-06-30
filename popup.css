@@ -57,7 +57,7 @@ body {
 
 .view-desc {
   font-size: 12px;
-  color: #3c3c38;
+  color: #9a9892;
   margin-bottom: 12px;
   line-height: 1.25;
   letter-spacing: -0.05em;
@@ -80,7 +80,7 @@ body {
   transition: border-color 0.15s ease;
 }
 
-.input::placeholder { color: #3c3c38; letter-spacing: -0.05em; }
+.input::placeholder { color: #6e6c66; letter-spacing: -0.05em; }
 .input:focus { border-color: #e4dfda; }
 
 /* ─── Error ──────────────────────────────────────────────────────────────── */
@@ -297,7 +297,7 @@ body {
   flex-shrink: 0;
   background: none;
   border: none;
-  color: #3c3c38;
+  color: #e4dfda;
   cursor: pointer;
   padding: 2px 4px;
   font-size: 10px;
@@ -306,12 +306,12 @@ body {
   transition: color 0.15s ease;
   line-height: 1;
 }
-.locked-item-remove:hover { color: #e4dfda; }
+.locked-item-remove:hover { color: #F87171; }
 
 .empty-state {
   text-align: center;
   font-size: 12px;
-  color: #3c3c38;
+  color: #9a9892;
   padding: 12px;
   letter-spacing: -0.05em;
   text-transform: uppercase;
